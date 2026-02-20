@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-
-namespace TargetApp
+﻿namespace TargetApp
 {
     public static class BankDbStorage
     {

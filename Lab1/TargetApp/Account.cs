@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace TargetApp
+﻿namespace TargetApp
 {
     public class Account
     {

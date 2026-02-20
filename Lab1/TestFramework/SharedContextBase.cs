@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace TestFramework
+﻿namespace TestFramework
 {
     public abstract class SharedContextBase
     {

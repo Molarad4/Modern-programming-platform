@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace TestFramework
+﻿namespace TestFramework
 {
     public class TestFailedException : Exception
     {

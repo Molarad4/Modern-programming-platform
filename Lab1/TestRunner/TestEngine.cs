@@ -1,10 +1,7 @@
-﻿using System;
-using System.Linq;
-using System.Reflection;
-using System.Threading.Tasks;
+﻿using System.Reflection;
 using TestFramework;
 
-namespace MyTestRunner
+namespace TestRunner
 {
     public class TestEngine
     {
@@ -12,12 +9,11 @@ namespace MyTestRunner
         {
             var assembly = Assembly.LoadFrom(dllPath);
             var types = assembly.GetTypes();
-
-            // 1. Shared Context
+            
             foreach (var type in types)
             {
                 var sharedMethods = type.GetMethods()
-                    .Where(m => m.GetCustomAttributes<SharedContextAttribute>().Any()); // Исправлено здесь
+                    .Where(m => m.GetCustomAttributes<SharedContextAttribute>().Any());
 
                 foreach (var m in sharedMethods)
                 {
@@ -25,13 +21,11 @@ namespace MyTestRunner
                     m.Invoke(instance, null);
                 }
             }
-
-            // 2. Тестовые методы
+            
             foreach (var type in types)
             {
                 var methods = type.GetMethods();
-        
-                // Исправленный поиск: проверяем наличие хотя бы одного из атрибутов
+                
                 var testMethods = methods.Where(m => 
                     m.GetCustomAttributes<MyTestAttribute>().Any() || 
                     m.GetCustomAttributes<MyTestCaseAttribute>().Any());
@@ -43,7 +37,6 @@ namespace MyTestRunner
 
                 foreach (var method in testMethods)
                 {
-                    // Берем ВСЕ тест-кейсы (их может быть много)
                     var testCases = method.GetCustomAttributes<MyTestCaseAttribute>().ToList();
 
                     if (testCases.Any())

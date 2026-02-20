@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using TestFramework;
-using TargetApp;
+﻿using TestFramework;
 
 namespace TargetApp.Tests
 {
@@ -14,23 +10,21 @@ namespace TargetApp.Tests
         public void SetUp()
         {
             _service = new BankService();
-            // Гарантируем чистое состояние перед каждым тестом
+           
             if (BankDbStorage.Accounts.Count == 0) BankDbStorage.InitializeSeedData();
             
             var acc = BankDbStorage.Accounts[0];
             acc.Balance = 1000m;
             acc.IsBlocked = false;
         }
-
-        // --- БЛОК 1: ПРОВЕРКА SHARED CONTEXT ---
+        
         [MyTest]
         public void Test_SharedContext_DataTransfer()
         {
             var key = SharedContextBase.GetData("GlobalKey");
             Assert.AreEqual("Secret123", key); // Успех
         }
-
-        // --- БЛОК 2: ПРОВЕРКИ СТРОК И ОБЪЕКТОВ ---
+        
         [MyTest]
         public void Test_OwnerName_Validation()
         {
@@ -45,8 +39,7 @@ namespace TargetApp.Tests
             Assert.IsNotNull(account); // Успех
             Assert.IsInstanceOf<Account>(account); // Успех
         }
-
-        // --- БЛОК 3: НАМЕРЕННЫЕ ПРОВАЛЫ (FAIL CASES) ---
+        
         [MyTest]
         public void Test_FAILED_WrongBalance()
         {
@@ -60,8 +53,7 @@ namespace TargetApp.Tests
             // Тоже упадет
             Assert.StringContains("Elon Musk", BankDbStorage.Accounts[0].Owner);
         }
-
-        // --- БЛОК 4: ИСКЛЮЧЕНИЯ ---
+        
         [MyTest]
         public void Test_Exception_On_NegativeTransfer()
         {
@@ -77,8 +69,7 @@ namespace TargetApp.Tests
             Assert.Throws<NullReferenceException>(() => 
                 _service.Transfer(1, 2, 50000m));
         }
-
-        // --- БЛОК 5: АСИНХРОННОСТЬ ---
+        
         [MyTest]
         public async Task Test_Async_Payment_Processing()
         {
@@ -94,8 +85,7 @@ namespace TargetApp.Tests
             bool result = await _service.ProcessExternalPaymentAsync(1, 100m);
             Assert.IsFalse(result); // Успех, т.к. результат должен быть false
         }
-
-        // --- БЛОК 6: ПАРАМЕТРИЗОВАННЫЕ ТЕСТЫ (TestCase) ---
+        
         [MyTestCase(100, 900)]
         [MyTestCase(500, 500)]
         [MyTestCase(1000, 0)]
@@ -114,7 +104,7 @@ namespace TargetApp.Tests
             else Assert.IsNull(acc);
         }
 
-        // --- БЛОК 7: КОЛЛЕКЦИИ И ЛОГИКА ---
+      
         [MyTest]
         public void Test_ActiveAccounts_Count()
         {
@@ -128,11 +118,6 @@ namespace TargetApp.Tests
             BankDbStorage.ClearAll();
             Assert.IsEmpty(BankDbStorage.Accounts); // Успех
         }
-
-        [AfterEach]
-        public void TearDown()
-        {
-            // Здесь можно добавить лог в консоль для отладки
-        }
+        
     }
 }

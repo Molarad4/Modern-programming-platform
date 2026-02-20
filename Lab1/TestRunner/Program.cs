@@ -1,21 +1,13 @@
-﻿using System;
-using System.IO;
-using System.Reflection;
-using System.Threading.Tasks;
-
-namespace MyTestRunner
+﻿namespace TestRunner
 {
     class Program
     {
         static async Task Main(string[] args)
         {
             Console.Title = "Custom Test Runner v1.0";
-            Console.WriteLine("=== АВТОМАТИЧЕСКИЙ ЗАПУСК ТЕСТОВ ===");
-
-            // 1. Определяем путь к папке, где лежит сам Runner
-            string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
             
-            // 2. Указываем имя файла DLL с тестами
+            string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+       
             string dllName = "TargetApp.Tests.dll";
             string fullPath = Path.Combine(baseDirectory, dllName);
 
