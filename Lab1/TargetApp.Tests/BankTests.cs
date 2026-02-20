@@ -24,6 +24,16 @@ namespace TargetApp.Tests
             var account = BankDbStorage.Accounts[0];
             Assert.StringContains("Ivan", account.Owner); // Успех
         }
+        
+        [MyTest("Тест проверяющий сам себя")]
+        public void Test_CheckDescription()
+        {
+            var method = this.GetType().GetMethod("Test_CheckDescription");
+            
+            var attr = (MyTestAttribute)method.GetCustomAttributes(typeof(MyTestAttribute), false)[0];
+            
+            Assert.AreEqual("Тест проверяющий сам себя", attr.Description);
+        }
 
         [MyTest]
         public void Test_Account_Type_And_Nullability()
@@ -43,7 +53,7 @@ namespace TargetApp.Tests
         [MyTest]
         public void Test_FAILED_WrongOwner()
         {
-            // Тоже упадет
+            // Fail
             Assert.StringContains("Elon Musk", BankDbStorage.Accounts[0].Owner);
         }
         
@@ -58,7 +68,7 @@ namespace TargetApp.Tests
         [MyTest]
         public void Test_FAILED_WrongExceptionType()
         {
-            // Упадет, так как мы ждем NullRef, а будет InvalidOperation
+            // Fail
             Assert.Throws<NullReferenceException>(() => 
                 _service.Transfer(1, 2, 50000m));
         }
@@ -76,7 +86,7 @@ namespace TargetApp.Tests
         {
             _service.BlockAccount(1);
             bool result = await _service.ProcessExternalPaymentAsync(1, 100m);
-            Assert.IsFalse(result); // Успех, т.к. результат должен быть false
+            Assert.IsFalse(result); // Успех
         }
         
         [MyTestCase(100, 900)]

@@ -1,7 +1,15 @@
 ﻿namespace TestFramework
 {
     [AttributeUsage(AttributeTargets.Method)]
-    public class MyTestAttribute : Attribute { }
+    public class MyTestAttribute : Attribute
+    {
+        public string Description { get; set; }
+
+        public MyTestAttribute(string description = "") 
+        {
+            Description = description;
+        }
+    }
     
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
     public class MyTestCaseAttribute : Attribute 
