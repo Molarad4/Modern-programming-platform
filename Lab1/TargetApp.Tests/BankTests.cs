@@ -18,6 +18,12 @@ namespace TargetApp.Tests
             acc.IsBlocked = false;
         }
         
+        [AfterEach]
+        public void TearDown()
+        {
+            _service = null;
+        }
+        
         [MyTest]
         public void Test_OwnerName_Validation()
         {
@@ -46,7 +52,6 @@ namespace TargetApp.Tests
         [MyTest]
         public void Test_FAILED_WrongBalance()
         {
-            // Этот тест ДОЛЖЕН упасть, чтобы показать работу ошибок
             Assert.AreEqual(999999m, BankDbStorage.Accounts[0].Balance); 
         }
 
