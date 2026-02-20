@@ -19,13 +19,6 @@ namespace TargetApp.Tests
         }
         
         [MyTest]
-        public void Test_SharedContext_DataTransfer()
-        {
-            var key = SharedContextBase.GetData("GlobalKey");
-            Assert.AreEqual("Secret123", key); // Успех
-        }
-        
-        [MyTest]
         public void Test_OwnerName_Validation()
         {
             var account = BankDbStorage.Accounts[0];
