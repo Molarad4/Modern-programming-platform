@@ -1,62 +1,81 @@
-﻿namespace TestRunner
+﻿using System.Diagnostics;
+
+namespace TestRunner
 {
     class Program
     {
+        private static readonly object _consoleLock = new object();
+
         static async Task Main(string[] args)
         {
-            Console.Title = "Custom Test Runner v1.0";
+            Console.Title = "Parallel Test Runner v2.0";
             
             string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-       
             string dllName = "TargetApp.Tests.dll";
             string fullPath = Path.Combine(baseDirectory, dllName);
 
             if (!File.Exists(fullPath))
             {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine($"Файл {dllName} не найден в папке приложения.");
-                Console.WriteLine($"Ожидаемый путь: {fullPath}");
-                Console.ResetColor();
-                Console.WriteLine("\nПожалуйста, убедитесь, что проект TargetApp.Tests собран.");
+                Console.WriteLine($"Файл {dllName} не найден.");
                 return;
             }
 
-            Console.WriteLine($"Обнаружена библиотека тестов: {dllName}");
-            
             var engine = new TestEngine();
-            int passed = 0;
-            int failed = 0;
 
-            Console.WriteLine("\nВыполнение тестов...\n");
-            Console.WriteLine("--------------------------------------------------");
+            Console.WriteLine("==================================================");
+            Console.WriteLine("ЗАПУСК В ПОСЛЕДОВАТЕЛЬНОМ РЕЖИМЕ (1 ПОТОК)");
+            Console.WriteLine("==================================================");
+            
+            var swSequential = Stopwatch.StartNew();
+            await engine.RunAllTests(fullPath, 1, PrintTestResult);
+            swSequential.Stop();
 
-            await engine.RunAllTests(fullPath, (name, isSuccess, error) => 
+            Console.WriteLine("\n==================================================");
+            Console.WriteLine("ЗАПУСК В ПАРАЛЛЕЛЬНОМ РЕЖИМЕ (4 ПОТОКА)");
+            Console.WriteLine("==================================================");
+            
+            var swParallel = Stopwatch.StartNew();
+            await engine.RunAllTests(fullPath, 4, PrintTestResult);
+            swParallel.Stop();
+
+            Console.WriteLine("\n==================================================");
+            Console.WriteLine("СРАВНЕНИЕ ЭФФЕКТИВНОСТИ:");
+            Console.WriteLine($"Время последовательного запуска : {swSequential.ElapsedMilliseconds} мс");
+            Console.WriteLine($"Время параллельного запуска     : {swParallel.ElapsedMilliseconds} мс");
+            Console.WriteLine("==================================================");
+            
+            if (swParallel.ElapsedMilliseconds < swSequential.ElapsedMilliseconds)
+            {
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("УСПЕХ: Параллельный запуск выполнился быстрее!");
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("ПРЕДУПРЕЖДЕНИЕ: Параллельный запуск не быстрее. Возможно, тесты слишком быстрые.");
+            }
+            Console.ResetColor();
+        }
+
+        private static void PrintTestResult(string name, bool isSuccess, string error)
+        {
+            lock (_consoleLock)
             {
                 if (isSuccess)
                 {
                     Console.ForegroundColor = ConsoleColor.Green;
-                    Console.Write("[PASS] ");
+                    Console.Write($"[{Thread.CurrentThread.ManagedThreadId:D2}] [PASS] ");
                     Console.ResetColor();
                     Console.WriteLine(name);
-                    passed++;
                 }
                 else
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.Write("[FAIL] ");
+                    Console.Write($"[{Thread.CurrentThread.ManagedThreadId:D2}] [FAIL] ");
                     Console.ResetColor();
-                    Console.WriteLine($"{name} -> Ошибка: {error}");
-                    failed++;
+                    Console.WriteLine($"{name} -> {error}");
                 }
-            });
-
-            Console.WriteLine("--------------------------------------------------");
-            Console.WriteLine($"\nИТОГО: Всего {passed + failed} | Прошло: {passed} | Провалено: {failed}");
-            
-            if (failed == 0) Console.WriteLine("\n🎉 ВСЕ ТЕСТЫ ПРОЙДЕНЫ!");
-
-            //Console.WriteLine("\nНажмите любую клавишу для выхода...");
-            //Console.ReadKey();
+            }
         }
     }
 }

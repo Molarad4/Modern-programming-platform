@@ -4,7 +4,6 @@
     public class MyTestAttribute : Attribute
     {
         public string Description { get; set; }
-
         public MyTestAttribute(string description = "") 
         {
             Description = description;
@@ -26,4 +25,12 @@
     
     [AttributeUsage(AttributeTargets.Method)]
     public class SharedContextAttribute : Attribute { }
+
+   
+    [AttributeUsage(AttributeTargets.Method)]
+    public class TimeoutAttribute : Attribute
+    {
+        public int Milliseconds { get; }
+        public TimeoutAttribute(int milliseconds) => Milliseconds = milliseconds;
+    }
 }
