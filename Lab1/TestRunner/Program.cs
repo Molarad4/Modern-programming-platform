@@ -1,4 +1,6 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace TestRunner
 {
@@ -8,73 +10,54 @@ namespace TestRunner
 
         static async Task Main(string[] args)
         {
-            Console.Title = "Parallel Test Runner v2.0";
-            
-            string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            string dllName = "TargetApp.Tests.dll";
-            string fullPath = Path.Combine(baseDirectory, dllName);
+            string fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TargetApp.Tests.dll");
+            if (!File.Exists(fullPath)) return;
 
-            if (!File.Exists(fullPath))
+            using var engine = new TestEngine(2, 10);
+
+            Log("=== ЛАБОРАТОРНАЯ РАБОТА 3 ===");
+
+            Log("\n>>> ЭТАП 1: ПИКОВАЯ НАГРУЗКА");
+            for (int i = 0; i < 3; i++) 
             {
-                Console.WriteLine($"Файл {dllName} не найден.");
-                return;
+                await engine.RunAllTests(fullPath, PrintTestResult);
             }
+            await engine.WaitTasks();
 
-            var engine = new TestEngine();
+            Log("\n>>> ЭТАП 2: ИНТЕРВАЛ БЕЗДЕЙСТВИЯ (5 сек)");
+            Log("Сейчас должны пойти сообщения о завершении потоков...");
+            await Task.Delay(5000); 
 
-            Console.WriteLine("==================================================");
-            Console.WriteLine("ЗАПУСК В ПОСЛЕДОВАТЕЛЬНОМ РЕЖИМЕ (1 ПОТОК)");
-            Console.WriteLine("==================================================");
+            Log("\n>>> ЭТАП 3: ЕДИНИЧНЫЕ ПОДАЧИ");
+            engine.RunSingleTest(fullPath, "BankTests", "Test_OwnerName_Validation", PrintTestResult);
+            await engine.WaitTasks();
             
-            var swSequential = Stopwatch.StartNew();
-            await engine.RunAllTests(fullPath, 1, PrintTestResult);
-            swSequential.Stop();
+            engine.RunSingleTest(fullPath, "BankTests", "Test_CheckDescription", PrintTestResult);
+            await engine.WaitTasks();
 
-            Console.WriteLine("\n==================================================");
-            Console.WriteLine("ЗАПУСК В ПАРАЛЛЕЛЬНОМ РЕЖИМЕ (4 ПОТОКА)");
-            Console.WriteLine("==================================================");
-            
-            var swParallel = Stopwatch.StartNew();
-            await engine.RunAllTests(fullPath, 4, PrintTestResult);
-            swParallel.Stop();
+            Log("\n>>> ЭТАП 4: ФИНАЛЬНОЕ СЖАТИЕ");
+            await Task.Delay(4000); 
 
-            Console.WriteLine("\n==================================================");
-            Console.WriteLine("СРАВНЕНИЕ ЭФФЕКТИВНОСТИ:");
-            Console.WriteLine($"Время последовательного запуска : {swSequential.ElapsedMilliseconds} мс");
-            Console.WriteLine($"Время параллельного запуска     : {swParallel.ElapsedMilliseconds} мс");
-            Console.WriteLine("==================================================");
-            
-            if (swParallel.ElapsedMilliseconds < swSequential.ElapsedMilliseconds)
+            Log($"\nГотово. Тестов: {TestEngine.TotalExecuted}");
+            Console.ReadLine();
+        }
+
+        public static void Log(string message)
+        {
+            lock (_consoleLock)
             {
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine("УСПЕХ: Параллельный запуск выполнился быстрее!");
+                Console.WriteLine(message);
             }
-            else
-            {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("ПРЕДУПРЕЖДЕНИЕ: Параллельный запуск не быстрее. Возможно, тесты слишком быстрые.");
-            }
-            Console.ResetColor();
         }
 
         private static void PrintTestResult(string name, bool isSuccess, string error)
         {
             lock (_consoleLock)
             {
-                if (isSuccess)
-                {
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.Write($"[{Thread.CurrentThread.ManagedThreadId:D2}] [PASS] ");
-                    Console.ResetColor();
-                    Console.WriteLine(name);
-                }
-                else
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.Write($"[{Thread.CurrentThread.ManagedThreadId:D2}] [FAIL] ");
-                    Console.ResetColor();
-                    Console.WriteLine($"{name} -> {error}");
-                }
+                Console.ForegroundColor = isSuccess ? ConsoleColor.Green : ConsoleColor.Red;
+                Console.Write($"{(isSuccess ? "[PASS]" : "[FAIL]")} ");
+                Console.ResetColor();
+                Console.WriteLine(name + (isSuccess ? "" : " -> " + error));
             }
         }
     }

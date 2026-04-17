@@ -7,7 +7,7 @@ namespace TargetApp.Tests
         [MyTest("Долгий тест 1")]
         public async Task Test_LongRunningTask_1()
         {
-            await Task.Delay(1000); // Имитация долгой работы (1 секунда)
+            await Task.Delay(1000);
             Assert.IsTrue(true);
         }
 
