@@ -33,4 +33,26 @@
         public int Milliseconds { get; }
         public TimeoutAttribute(int milliseconds) => Milliseconds = milliseconds;
     }
+    
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class)]
+    public class CategoryAttribute : Attribute
+    {
+        public string Category { get; set; }
+        public CategoryAttribute(string category) => Category = category;
+    }
+
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class)]
+    public class PriorityAttribute : Attribute
+    {
+        public int Priority { get; set; }
+        public PriorityAttribute(int priority) => Priority = priority;
+    }
+
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class)]
+    public class AuthorAttribute : Attribute
+    {
+        public string Name { get; set; }
+        public string Email { get; set; }
+        public AuthorAttribute(string name) => Name = name;
+    }
 }

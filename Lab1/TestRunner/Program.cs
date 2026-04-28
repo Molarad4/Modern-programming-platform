@@ -1,47 +1,75 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
+using TestFramework;
 
 namespace TestRunner
 {
     class Program
     {
         private static readonly object _consoleLock = new object();
-
+        
         static async Task Main(string[] args)
         {
             string fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TargetApp.Tests.dll");
-            if (!File.Exists(fullPath)) return;
+            if (!File.Exists(fullPath))
+            {
+                Console.WriteLine("Test DLL not found!");
+                return;
+            }
 
             using var engine = new TestEngine(2, 10);
-
-            Log("=== ЛАБОРАТОРНАЯ РАБОТА 3 ===");
-
-            Log("\n>>> ЭТАП 1: ПИКОВАЯ НАГРУЗКА");
-            for (int i = 0; i < 3; i++) 
+            
+            engine.TestCompleted += (sender, e) =>
             {
-                await engine.RunAllTests(fullPath, PrintTestResult);
-            }
-            await engine.WaitTasks();
+                Log($"[Event] Test {e.TestName} completed: {(e.Success ? "PASS" : "FAIL")} in {e.DurationMs}ms");
+            };
+            
+            engine.ThreadCreated += (sender, e) =>
+                Log($"[Event] 🟢 {e.Message}");
+            
+            engine.ThreadTerminated += (sender, e) =>
+                Log($"[Event] 🔴 {e.Message}");
+            
+            engine.QueueStatusChanged += (sender, e) =>
+                Log($"[Event] 📊 {e.Message}");
+            
+            engine.ThreadError += (sender, e) =>
+                Log($"[Event] ❌ Error in {e.ThreadName}: {e.Error.Message}");
 
-            Log("\n>>> ЭТАП 2: ИНТЕРВАЛ БЕЗДЕЙСТВИЯ (5 сек)");
-            Log("Сейчас должны пойти сообщения о завершении потоков...");
-            await Task.Delay(5000); 
-
-            Log("\n>>> ЭТАП 3: ЕДИНИЧНЫЕ ПОДАЧИ");
-            engine.RunSingleTest(fullPath, "BankTests", "Test_OwnerName_Validation", PrintTestResult);
+            
+            Log("\n>>> ДЕМОНСТРАЦИЯ ФИЛЬТРАЦИИ: Только тесты с Priority >= 2");
+            
+            await engine.RunAllTests(fullPath, PrintTestResult, FilterByPriority);
             await engine.WaitTasks();
             
-            engine.RunSingleTest(fullPath, "BankTests", "Test_CheckDescription", PrintTestResult);
+            Log("\n>>> ДЕМОНСТРАЦИЯ YIELD-ТЕСТОВ (BankTests.YieldMoneyTransferTest)");
+            engine.RunSingleTest(fullPath, "BankTests", "YieldMoneyTransferTest", PrintTestResult);
             await engine.WaitTasks();
-
-            Log("\n>>> ЭТАП 4: ФИНАЛЬНОЕ СЖАТИЕ");
-            await Task.Delay(4000); 
-
-            Log($"\nГотово. Тестов: {TestEngine.TotalExecuted}");
+            
+            Log("\n>>> ДЕМОНСТРАЦИЯ Assert.Explain (детальный разбор выражения при ошибке)");
+            await engine.RunAllTests(fullPath, PrintTestResult, FilterForExplainTests);
+            await engine.WaitTasks();
+            
+            Log($"\n✅ Всего выполнено тестов: {TestEngine.TotalExecuted}");
+            Log("Нажмите Enter для выхода...");
             Console.ReadLine();
         }
-
+        
+        private static bool FilterByPriority(MethodInfo method)
+        {
+            var priority = method.GetCustomAttribute<PriorityAttribute>();
+            if (priority == null) return true;
+            return priority.Priority >= 2;
+        }
+        
+        private static bool FilterForExplainTests(MethodInfo method)
+        {
+            return method.Name.Contains("Explain", StringComparison.OrdinalIgnoreCase);
+        }
+        
         public static void Log(string message)
         {
             lock (_consoleLock)
@@ -49,7 +77,7 @@ namespace TestRunner
                 Console.WriteLine(message);
             }
         }
-
+        
         private static void PrintTestResult(string name, bool isSuccess, string error)
         {
             lock (_consoleLock)
@@ -57,7 +85,7 @@ namespace TestRunner
                 Console.ForegroundColor = isSuccess ? ConsoleColor.Green : ConsoleColor.Red;
                 Console.Write($"{(isSuccess ? "[PASS]" : "[FAIL]")} ");
                 Console.ResetColor();
-                Console.WriteLine(name + (isSuccess ? "" : " -> " + error));
+                Console.WriteLine(name + (string.IsNullOrEmpty(error) ? "" : " -> " + error));
             }
         }
     }
